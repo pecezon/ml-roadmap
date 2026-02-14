@@ -225,3 +225,5 @@ poker-final-project
 *.mp3
 
 .DS_Store
+
+*.csv
