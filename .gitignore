@@ -227,3 +227,5 @@ poker-final-project
 .DS_Store
 
 *.csv
+
+*.pkl
