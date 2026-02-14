@@ -136,8 +136,8 @@ gesture_labels = [
     "Closed_Fist",
     "Open_Palm",
     "Pointing_Up",
-    "Thumbs_Down",
-    "Thumbs_Up",
+    "Thumb_Down",
+    "Thumb_Up",
     "Victory",
     "ILoveYou"
 ]
@@ -262,7 +262,7 @@ while cap.isOpened():
 
                 if hand_label == "Left":
                     data_row[1] = process_hand_gestures(gesture_name)
-                elif hand_label == "Right":
+                else:
                     data_row[0] = process_hand_gestures(gesture_name)
 
         # Process face blendshapes
@@ -320,8 +320,10 @@ while cap.isOpened():
         print(f"Hand Landmarks (relative to palm): {data_row[54:134]}")
 
         # Reset capture request
-        capture_requested = False
-        emote_to_capture = None
+        # I'll take a capture for every frame in 5 seconds
+        if time.time() > capture_time + 5:
+            capture_requested = False
+            emote_to_capture = None
 
     # Display the resulting frame
     cv2.imshow("Hand and Face Tracking", frame)
