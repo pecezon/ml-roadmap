@@ -209,3 +209,19 @@ __marimo__/
 # Data sets
 opencv-introduction/catsvsdogs/
 car-detection-classifier/clf-data/
+
+poker-final-project
+
+# Every media pipe model
+*.task
+
+# JetBrains IDE
+.idea
+
+# Virtual documents
+.virtual_documents
+
+# Audio files
+*.mp3
+
+.DS_Store
