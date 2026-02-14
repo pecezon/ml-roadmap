@@ -239,7 +239,7 @@ while cap.isOpened():
         capture_requested = True
         capture_time = time.time()
         emote_to_capture = chr(key)
-        print("Emote now...")
+        print(f"Emote getting captured in 2 seconds ({emotes[int(emote_to_capture)]})")
 
     # Capture Image on Specific Gesture and Process Data
     if (
@@ -262,7 +262,7 @@ while cap.isOpened():
 
                 if hand_label == "Left":
                     data_row[1] = process_hand_gestures(gesture_name)
-                else:
+                elif hand_label == "Right":
                     data_row[0] = process_hand_gestures(gesture_name)
 
         # Process face blendshapes
@@ -271,7 +271,7 @@ while cap.isOpened():
             idx = blendshapes.index(blendshape) - 1
 
             #Skip Neutral
-            if blendshape.category_name == "neutral":
+            if blendshape.category_name == "_neutral":
                 continue
 
             if blendshape.score > 0.5:
@@ -315,7 +315,6 @@ while cap.isOpened():
         df.loc[len(df)] = data_row
 
         # Confirm Capture
-        print(f"Captured Emote: {emotes[int(emote_to_capture)]}")
         print(f"Hand Gestures: Left - {data_row[0]}, Right - {data_row[1]}")
         print(f"Face Blendshapes: {data_row[2:54]}")
         print(f"Hand Landmarks (relative to palm): {data_row[54:134]}")
