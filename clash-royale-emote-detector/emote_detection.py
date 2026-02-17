@@ -5,73 +5,17 @@ import cv2
 # Importaciones
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-import pandas as pd
 import numpy as np
 import time
+import joblib
+import pandas as pd
+import pygame
 
-# Read the CSV file (After first run this will be used)
-df = pd.read_csv('processed_emotes.csv')
+# Initialize Pygame Mixer for Audio Playback
+pygame.mixer.init()
 
-# # Define the columns for the DataFrame (After first run this wont be used)
-# columns = ["lhg", "rhg", "browDownLeft",
-# "browDownRight",
-# "browInnerUp",
-# "browOuterUpLeft",
-# "browOuterUpRight",
-# "cheekPuff",
-# "cheekSquintLeft",
-# "cheekSquintRight",
-# "eyeBlinkLeft",
-# "eyeBlinkRight",
-# "eyeLookDownLeft",
-# "eyeLookDownRight",
-# "eyeLookInLeft",
-# "eyeLookInRight",
-# "eyeLookOutLeft",
-# "eyeLookOutRight",
-# "eyeLookUpLeft",
-# "eyeLookUpRight",
-# "eyeSquintLeft",
-# "eyeSquintRight",
-# "eyeWideLeft",
-# "eyeWideRight",
-# "jawForward",
-# "jawLeft",
-# "jawOpen",
-# "jawRight",
-# "mouthClose",
-# "mouthDimpleLeft",
-# "mouthDimpleRight",
-# "mouthFrownLeft",
-# "mouthFrownRight",
-# "mouthFunnel",
-# "mouthLeft",
-# "mouthLowerDownLeft",
-# "mouthLowerDownRight",
-# "mouthPressLeft",
-# "mouthPressRight",
-# "mouthPucker",
-# "mouthRight",
-# "mouthRollLower",
-# "mouthRollUpper",
-# "mouthShrugLower",
-# "mouthShrugUpper",
-# "mouthSmileLeft",
-# "mouthSmileRight",
-# "mouthStretchLeft",
-# "mouthStretchRight",
-# "mouthUpperUpLeft",
-# "mouthUpperUpRight",
-# "noseSneerLeft",
-# "noseSneerRight",
-# "tongueOut", "ll1x", "ll1y", "ll2x", "ll2y", "ll3x", "ll3y", "ll4x", "ll4y", "ll5x", "ll5y", "ll6x", "ll6y",
-#             "ll7x", "ll7y", "ll8x", "ll8y", "ll9x", "ll9y", "ll10x", "ll10y", "ll11x", "ll11y", "ll12x", "ll12y", "ll13x",
-#             "ll13y", "ll14x", "ll14y", "ll15x", "ll15y", "ll16x", "ll16y", "ll17x", "ll17y", "ll18x", "ll18y", "ll19x", "ll19y",
-#             "ll20x", "ll20y", "rl1x", "rl1y", "rl2x", "rl2y", "rl3x", "rl3y", "rl4x", "rl4y", "rl5x", "rl5y", "rl6x", "rl6y",
-#             "rl7x", "rl7y", "rl8x", "rl8y", "rl9x", "rl9y", "rl10x", "rl10y", "rl11x", "rl11y",
-#             "rl12x", "rl12y", "rl13x", "rl13y", "rl14x", "rl14y", "rl15x", "rl15y", "rl16x", "rl16y", "rl17x", "rl17y",
-#             "rl18x", "rl18y", "rl19x", "rl19y", "rl20x", "rl20y", "emote_label"]
-# df = pd.DataFrame(columns=columns)
+# Trained ML Model
+model, feature_names = joblib.load('emote_detection_pipeline_v2.pkl')
 
 # Model Setup
 MODEL_PATH = "./gesture_recognition.task"
@@ -98,28 +42,29 @@ face_detector = vision.FaceLandmarker.create_from_options(face_options)
 
 # Drawing hands utilities
 HAND_CONNECTIONS = [
-    (0, 1), (1, 2), (2, 3), (3, 4),    # Thumb
-    (0, 5), (5, 6), (6, 7), (7, 8),    # Index
-    (0, 9), (9, 10), (10, 11), (11, 12), # Middle
-    (0, 13), (13, 14), (14, 15), (15, 16), # Ring
-    (0, 17), (17, 18), (18, 19), (19, 20), # Pinky
-    (5, 9), (9, 13), (13, 17)          # Palm
+    (0, 1), (1, 2), (2, 3), (3, 4),  # Thumb
+    (0, 5), (5, 6), (6, 7), (7, 8),  # Index
+    (0, 9), (9, 10), (10, 11), (11, 12),  # Middle
+    (0, 13), (13, 14), (14, 15), (15, 16),  # Ring
+    (0, 17), (17, 18), (18, 19), (19, 20),  # Pinky
+    (5, 9), (9, 13), (13, 17)  # Palm
 ]
+
 
 def draw_hand_on_frame(frame, hand_landmarks):
     height, width, _ = frame.shape
-    
+
     # Draw Connections (Lines)
     for connection in HAND_CONNECTIONS:
         start_idx = connection[0]
         end_idx = connection[1]
-        
+
         # Convert normalized coordinates (0-1) to pixel coordinates
-        start_point = (int(hand_landmarks[start_idx].x * width), 
+        start_point = (int(hand_landmarks[start_idx].x * width),
                        int(hand_landmarks[start_idx].y * height))
-        end_point = (int(hand_landmarks[end_idx].x * width), 
+        end_point = (int(hand_landmarks[end_idx].x * width),
                      int(hand_landmarks[end_idx].y * height))
-        
+
         cv2.line(frame, start_point, end_point, (255, 255, 255), 2)
 
     # Draw Landmarks (Dots)
@@ -127,8 +72,6 @@ def draw_hand_on_frame(frame, hand_landmarks):
         pixel_x = int(landmark.x * width)
         pixel_y = int(landmark.y * height)
         cv2.circle(frame, (pixel_x, pixel_y), 5, (0, 255, 0), -1)
-
-# Functions to capture image and process the landmarks it
 
 # Label the gestures with a number
 gesture_labels = [
@@ -141,8 +84,11 @@ gesture_labels = [
     "Victory",
     "ILoveYou"
 ]
+
+
 def process_hand_gestures(hand_label):
     return gesture_labels.index(hand_label) if hand_label in gesture_labels else 0
+
 
 # Camera Live Recording
 cap = cv2.VideoCapture(0)
@@ -157,17 +103,42 @@ emotes = {
     4: "Magician_Fire",
     5: "Surprised_Bandit",
     6: "Nose_Picking_Barb",
-    7: "Hog_Ridder_Kiss",
+    7: "Hog_Rider_Kiss",
     8: "Angry_Giant",
     9: "Happy_Royale_Ghost",
 }
 
-# So the screen doesnt freezes
-capture_requested = False
-capture_time = 0
-delay_seconds = 2
-emote_to_capture = None
+# Emote Video Files
+emote_videos = {
+    0: "emote_videos/goblin_thumbs_up.mp4",
+    1: "emote_videos/yawning_princess.mp4",
+    2: "emote_videos/goblin_peace.mp4",
+    3: "emote_videos/angry_barb.mp4",
+    4: "emote_videos/magician_fire.mp4",
+    5: "emote_videos/surprised_bandit.mp4",
+    6: "emote_videos/nose_picking_barb.mp4",
+    7: "emote_videos/hog_rider_kiss.mp4",
+    8: "emote_videos/angry_giant.mp4",
+    9: "emote_videos/happy_royale_ghost.mp4",
+}
 
+# Emote Audio Files
+emote_audios = {
+    0: "emote_audios/goblin_thumbs_up.wav",
+    1: "emote_audios/yawning_princess.wav",
+    2: "emote_audios/goblin_peace.wav",
+    3: "emote_audios/angry_barb.wav",
+    4: "emote_audios/magician_fire.wav",
+    5: "emote_audios/surprised_bandit.wav",
+    6: "emote_audios/nose_picking_barb.wav",
+    7: "emote_audios/hog_rider_kiss.wav",
+    8: "emote_audios/angry_giant.wav",
+    9: "emote_audios/happy_royale_ghost.wav",
+}
+
+
+current_emote_cap = None
+current_emote_id = None
 while cap.isOpened():
     # Acts upon key pressing
     key = cv2.waitKey(1) & 0xFF
@@ -179,7 +150,7 @@ while cap.isOpened():
 
     frame = cv2.flip(frame, 1)
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    
+
     mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
 
     timestamp = int(time.time() * 1000)
@@ -188,10 +159,10 @@ while cap.isOpened():
     result = detector.recognize_for_video(mp_image, timestamp)
     if result.hand_landmarks:
         for h, hand_landmarks in enumerate(result.hand_landmarks):
-            draw_hand_on_frame(frame, hand_landmarks)   
+            draw_hand_on_frame(frame, hand_landmarks)
 
             if result.handedness and len(result.handedness) > h:
-                hand_label = result.handedness[h][0].category_name 
+                hand_label = result.handedness[h][0].category_name
                 hand_score = result.handedness[h][0].score
 
             if result.gestures and len(result.gestures) > h:
@@ -238,22 +209,12 @@ while cap.isOpened():
                     cv2.LINE_AA
                 )
 
-    # Check if capture is requested
-    if key in [ord(str(i)) for i in range(10)]:
-        capture_requested = True
-        capture_time = time.time()
-        emote_to_capture = chr(key)
-        print(f"Emote getting captured in 2 seconds ({emotes[int(emote_to_capture)]})")
-
-    # Capture Image on Specific Gesture and Process Data
     if (
-            capture_requested and
             result.hand_landmarks and
-            face_result.face_blendshapes and
-            time.time() - capture_time >= delay_seconds
+            face_result.face_blendshapes
     ):
 
-        data_row = np.zeros(135)  # 2 for hand gestures, 52 for blendshapes, 80 for hand landmarks + 1 for label
+        data_row = np.zeros(134)  # 2 for hand gestures, 52 for blendshapes, 80 for hand landmarks
 
         # Process hand gestures
         for h, hand_landmarks in enumerate(result.hand_landmarks):
@@ -274,7 +235,7 @@ while cap.isOpened():
         for blendshape in blendshapes:
             idx = blendshapes.index(blendshape) - 1
 
-            #Skip Neutral
+            # Skip Neutral
             if blendshape.category_name == "_neutral":
                 continue
 
@@ -312,28 +273,65 @@ while cap.isOpened():
 
                 write_index += 2
 
-        # Append the label for the emote (the key pressed)
-        data_row[-1] = int(emote_to_capture)
+         # Predict Emote
+        input_df = pd.DataFrame([data_row], columns=feature_names)
+        predicted_emote = model.predict(input_df)[0]
+        proba = model.predict_proba(input_df)[0]
+        emote_name = emotes.get(predicted_emote, "Unknown")
 
-        # Save the data row to the DataFrame
-        df.loc[len(df)] = data_row
+        #Video Playback
+        if predicted_emote != current_emote_id:
+            current_emote_id = predicted_emote
 
-        # Confirm Capture
-        print(f"Hand Gestures: Left - {data_row[0]}, Right - {data_row[1]}")
-        print(f"Face Blendshapes: {data_row[2:54]}")
-        print(f"Hand Landmarks (relative to palm): {data_row[54:134]}")
+            if current_emote_cap:
+                current_emote_cap.release()
 
-        # Reset capture request
-        # I'll take a capture for every frame in 5 seconds
-        if time.time() > capture_time + 5:
-            capture_requested = False
-            emote_to_capture = None
+            video_emote_path = emote_videos.get(predicted_emote)
+            audio_emote_path = emote_audios.get(predicted_emote)
+
+            if video_emote_path:
+                current_emote_cap = cv2.VideoCapture(video_emote_path)
+
+            if audio_emote_path:
+                pygame.mixer.music.load(audio_emote_path)
+                pygame.mixer.music.play()
+
+        # Text With the prediction
+        cv2.putText(
+            frame,
+            f"Predicted Emote: {emote_name}. Accuracy: {proba[predicted_emote]:.2f}",
+            (10, frame.shape[0] - 30),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.8,
+            (0, 255, 255),
+            2,
+            cv2.LINE_AA
+        )
+
+    # Display Emote Video
+    if current_emote_cap:
+        ret_emote, emote_frame = current_emote_cap.read()
+
+        if not ret_emote:
+            # Restart animation when it finishes
+            current_emote_cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            ret_emote, emote_frame = current_emote_cap.read()
+
+        if ret_emote:
+            # Resize emote
+            emote_frame = cv2.resize(emote_frame, (200, 200))
+
+            h, w, _ = frame.shape
+
+            # Top-right corner
+            y1, y2 = 10, 210
+            x1, x2 = w - 210, w - 10
+
+            frame[y1:y2, x1:x2] = emote_frame
 
     # Display the resulting frame
     cv2.imshow("Hand and Face Tracking", frame)
     if key == 27:
-        # Save CSV
-        df.to_csv('processed_emotes.csv', index=False)
         break
 
 cap.release()
